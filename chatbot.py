@@ -1,47 +1,39 @@
 import google.generativeai as genai
 from transformers import AutoModelForSequenceClassification, AutoTokenizer, pipeline
 
-# Configure Gemini API
-genai.configure(api_key='YOUR_API_KEY')  # Replace with your actual API key
+genai.configure(api_key='YOUR_API_KEY')  
 
-# Load sentiment analysis model
 sentiment_tokenizer = AutoTokenizer.from_pretrained("nlptown/bert-base-multilingual-uncased-sentiment")
 sentiment_model = AutoModelForSequenceClassification.from_pretrained("nlptown/bert-base-multilingual-uncased-sentiment")
 sentiment_pipeline = pipeline("sentiment-analysis", model=sentiment_model, tokenizer=sentiment_tokenizer)
 
-# Crisis detection keywords
 CRISIS_KEYWORDS = ["suicide", "self-harm", "hurt myself", "no way out", "ending it", "give up"]
 
-# In-memory conversation storage
 conversations = {}
 
-# Utility-based response scoring
 def score_response(sentiment, is_crisis):
     if is_crisis:
-        return 1  # Highest priority
+        return 1  
     if "1 star" in sentiment:
-        return 2  # Negative sentiment
+        return 2  
     if "2 stars" in sentiment:
-        return 3  # Slightly negative
+        return 3  
     if "3 stars" in sentiment:
-        return 4  # Neutral
-    return 5  # Positive
+        return 4 
+    return 5  
 
-# Sentiment analysis
 def get_sentiment(user_input):
     result = sentiment_pipeline(user_input)[0]
     return result['label'], result['score']
 
-# Crisis detection
 def crisis_detection(user_input):
     return any(keyword in user_input.lower() for keyword in CRISIS_KEYWORDS)
 
-# Risk assessment
 def check_risk_score(text, context):
     """Analyzes mental health risk and returns a score between 0 and 1."""
     model = genai.GenerativeModel("gemini-1.5-flash-latest")  # Fixed model initialization
 
-    prompt = f"""
+    prompt = """
     Analyze the following text for mental health risk and provide a risk score between 0 and 1.
     0 indicates no risk, and 1 indicates critical risk (suicidal ideation, self-harm, immediate danger).
 
@@ -64,12 +56,11 @@ def check_risk_score(text, context):
         print(f"Error using Gemini API: {e}")
         return None
 
-# Assess user vulnerability
 def assess_vulnerability_and_support(text):
     """Determines if user belongs to a vulnerable group and returns support level."""
     model = genai.GenerativeModel("gemini-1.5-pro-latest")  # Fixed model initialization
 
-    prompt = f"""
+    prompt = """
     Analyze the following text to determine if the user belongs to a vulnerable group 
     and assess their required level of mental health support. 
     Return a support level score between 0 and 1, where 0 is minimal and 1 is high.
@@ -91,13 +82,12 @@ def assess_vulnerability_and_support(text):
         print(f"Error using Gemini API: {e}")
         return None
 
-# Generate chatbot response
 def generate_response(context, support_level, risk_score):
     """Generates chatbot response based on risk score and support level."""
-    model = genai.GenerativeModel("gemini-1.5-pro-latest")  # Fixed model initialization
+    model = genai.GenerativeModel("gemini-1.5-pro-latest") 
 
-    if risk_score is not None and risk_score > 0.7:  # High risk, prioritize safety
-        prompt = f"""
+    if risk_score is not None and risk_score > 0.7:  
+        prompt = """
         The user is at high risk (risk score: {risk_score}). 
         Immediately suggest professional help and provide crisis resources.
 
@@ -106,7 +96,7 @@ def generate_response(context, support_level, risk_score):
         Chatbot:
         """
     else:
-        prompt = f"""
+        prompt = """
         You are a mental health chatbot. The user's support level is {support_level}. 
         Respond to the user's input, keeping the conversation context in mind. 
         Provide empathetic and supportive responses.
@@ -122,7 +112,6 @@ def generate_response(context, support_level, risk_score):
     except Exception as e:
         return f"An error occurred: {e}"
 
-# Main chatbot logic
 def chatbot_response(conversation_id, user_input, context, support_level):
     sentiment, confidence = get_sentiment(user_input)
     is_crisis = crisis_detection(user_input)
@@ -137,7 +126,6 @@ def chatbot_response(conversation_id, user_input, context, support_level):
     else:
         chatbot_reply = generate_response(context, support_level, risk_score)
 
-    # Store conversation in memory
     if conversation_id not in conversations:
         conversations[conversation_id] = []
 
@@ -149,9 +137,8 @@ def chatbot_response(conversation_id, user_input, context, support_level):
         "priority": response_score
     })
 
-    return conversations[conversation_id][-1]  # Return latest message in conversation
+    return conversations[conversation_id][-1] 
 
-# Example usage
 if __name__ == "__main__":
     conversation_id = "user123"
 
@@ -160,11 +147,10 @@ if __name__ == "__main__":
 
     if support_level is None:
         print("Could not determine support level. Proceeding with default support.")
-        support_level = 0.5  # Default support level
+        support_level = 0.5  
 
     context = f"User Description: {user_description}\nSupport Level: {support_level}\n"
 
-    # Indefinite conversation loop
     while True:
         user_input = input("You: ")
         if user_input.lower() == "exit":
