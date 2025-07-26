@@ -31,18 +31,9 @@ def crisis_detection(user_input):
 
 def check_risk_score(text, context):
     """Analyzes mental health risk and returns a score between 0 and 1."""
-    model = genai.GenerativeModel("gemini-1.5-flash-latest")  # Fixed model initialization
+    model = genai.GenerativeModel("gemini-1.5-flash-latest") 
 
-    prompt = """
-    Analyze the following text for mental health risk and provide a risk score between 0 and 1.
-    0 indicates no risk, and 1 indicates critical risk (suicidal ideation, self-harm, immediate danger).
-
-    Context: "{context}"
-
-    Text: "{text}"
-
-    Risk Score (0 to 1):
-    """
+    prompt = "Analyze the following text for mental health risk and provide a risk score between 0 and 1. 0 indicates no risk, and 1 indicates critical risk (suicidal ideation, self-harm, immediate danger). Context: ",(context), "Text: ",(text)," Risk Score (0 to 1):"
     try:
         response = model.generate_content(prompt)
         result = response.text.strip()
@@ -53,22 +44,14 @@ def check_risk_score(text, context):
         except ValueError:
             return None
     except Exception as e:
-        print(f"Error using Gemini API: {e}")
+        print("Error using Gemini API:",(e))
         return None
 
 def assess_vulnerability_and_support(text):
     """Determines if user belongs to a vulnerable group and returns support level."""
-    model = genai.GenerativeModel("gemini-1.5-pro-latest")  # Fixed model initialization
+    model = genai.GenerativeModel("gemini-1.5-pro-latest") 
 
-    prompt = """
-    Analyze the following text to determine if the user belongs to a vulnerable group 
-    and assess their required level of mental health support. 
-    Return a support level score between 0 and 1, where 0 is minimal and 1 is high.
-
-    Text: "{text}"
-
-    Support Level (0 to 1):
-    """
+    prompt = "Analyze the following text to determine if the user belongs to a vulnerable group and assess their required level of mental health support. Return a support level score between 0 and 1, where 0 is minimal and 1 is high. Text: ",(text)," Support Level (0 to 1):"
     try:
         response = model.generate_content(prompt)
         result = response.text.strip()
@@ -87,30 +70,15 @@ def generate_response(context, support_level, risk_score):
     model = genai.GenerativeModel("gemini-1.5-pro-latest") 
 
     if risk_score is not None and risk_score > 0.7:  
-        prompt = """
-        The user is at high risk (risk score: {risk_score}). 
-        Immediately suggest professional help and provide crisis resources.
-
-        Context: {context}
-
-        Chatbot:
-        """
+        prompt = "The user is at high risk (risk score: ",(risk_score),"). Immediately suggest professional help and provide crisis resources. Context: ",(context)," Chatbot:"
     else:
-        prompt = """
-        You are a mental health chatbot. The user's support level is {support_level}. 
-        Respond to the user's input, keeping the conversation context in mind. 
-        Provide empathetic and supportive responses.
-
-        Context: {context}
-
-        Chatbot:
-        """
+        prompt = "You are a mental health chatbot. The user's support level is ",(support_level),". Respond to the user's input, keeping the conversation context in mind. Provide empathetic and supportive responses. Context: ",(context)," Chatbot:"
 
     try:
         response = model.generate_content(prompt)
         return response.text.strip()
     except Exception as e:
-        return f"An error occurred: {e}"
+        return str("An error occurred:"+(e))
 
 def chatbot_response(conversation_id, user_input, context, support_level):
     sentiment, confidence = get_sentiment(user_input)
@@ -119,7 +87,7 @@ def chatbot_response(conversation_id, user_input, context, support_level):
 
     risk_score = check_risk_score(user_input, context)
 
-    context += f"User: {user_input}\nRisk: {risk_score}\n"
+    context += str("User: "+(user_input)+"\nRisk: "+(risk_score)+"\n")
 
     if is_crisis:
         chatbot_reply = "I'm really sorry you're feeling this way. Please reach out to a professional or call a crisis helpline. You're not alone."
@@ -149,7 +117,7 @@ if __name__ == "__main__":
         print("Could not determine support level. Proceeding with default support.")
         support_level = 0.5  
 
-    context = f"User Description: {user_description}\nSupport Level: {support_level}\n"
+    context = str("User Description: "+(user_description)+"\nSupport Level: "+(support_level)+"\n")
 
     while True:
         user_input = input("You: ")
@@ -157,6 +125,6 @@ if __name__ == "__main__":
             break
 
         response_data = chatbot_response(conversation_id, user_input, context, support_level)
-        print(f"Chatbot: {response_data['response']}")
+        print("Chatbot: ",(response_data['response']))
 
-        context += f"Chatbot: {response_data['response']}\n"
+        context += str("Chatbot: "+(response_data['response'])+"\n")
